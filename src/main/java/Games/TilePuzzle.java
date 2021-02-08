@@ -1,14 +1,11 @@
 package Games;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Random;
+import java.util.*;
 
 
 public final class TilePuzzle implements IGame{
 
-    private final int[][] tilesCopy;
+    private int[][] tilesCopy;
     private final int N;
 
     // cache
@@ -16,6 +13,8 @@ public final class TilePuzzle implements IGame{
     private int zeroRow = -1;
     private int zeroCol = -1;
     private Collection<IGame> neighbors;
+    private int G;
+    private IGame previous;
     /*
      * Rep Invariant
      *      tilesCopy.length > 0
@@ -39,9 +38,11 @@ public final class TilePuzzle implements IGame{
         this.zeroRow = N - 1;
         this.zeroCol = N - 1;
         this.shuffle();
+        this.G=0;
+        this.previous=null;
     }
 
-    public TilePuzzle(int[][] tiles) {
+    public TilePuzzle(int[][] tiles, int G, IGame previous) {
         //this.N = tiles.length;
         this.N = tiles.length;
         this.tilesCopy = new int[N][N];
@@ -57,30 +58,48 @@ public final class TilePuzzle implements IGame{
             }
         }
         checkRep();
+        this.G=G+1;
+        this.previous=previous;
     }
 
 
 
 
-    private void shuffle(){
-        Random random = new Random();
+//    private void shuffle(){
+//        Random random = new Random();
+//
+//        for (int i = this.tilesCopy.length - 1; i > 0; i--) {
+//            for (int j = this.tilesCopy[i].length - 1; j > 0; j--) {
+//                int m = random.nextInt(i + 1);
+//                int n = random.nextInt(j + 1);
+//                if (this.tilesCopy[i][j] == 0){
+//                    this.zeroRow = m;
+//                    this.zeroCol = n;
+//                }else if(this.tilesCopy[m][n] == 0){
+//                    this.zeroRow = i;
+//                    this.zeroCol = j;
+//                }
+//                int temp = this.tilesCopy[i][j];
+//                this.tilesCopy[i][j] = this.tilesCopy[m][n];
+//                this.tilesCopy[m][n] = temp;
+//            }
+//        }
+//    }
 
-        for (int i = this.tilesCopy.length - 1; i > 0; i--) {
-            for (int j = this.tilesCopy[i].length - 1; j > 0; j--) {
-                int m = random.nextInt(i + 1);
-                int n = random.nextInt(j + 1);
-                if (this.tilesCopy[i][j] == 0){
-                    this.zeroRow = m;
-                    this.zeroCol = n;
-                }else if(this.tilesCopy[m][n] == 0){
-                    this.zeroRow = i;
-                    this.zeroCol = j;
-                }
-                int temp = this.tilesCopy[i][j];
-                this.tilesCopy[i][j] = this.tilesCopy[m][n];
-                this.tilesCopy[m][n] = temp;
-            }
+    private void shuffle(){
+        IGame current = this;
+        Random random = new Random();
+        for(int i=0; i<100; i++){
+            HashSet<IGame> neighbores =(HashSet<IGame>) current.getNeighbors();
+            List<IGame> neighboresList= new ArrayList<>(neighbores);
+            int n = neighbores.size();
+            int j = random.nextInt(n);
+            current = neighboresList.get(j);
+            this.tilesCopy=current.getBoard();
+//            System.out.println(this);
         }
+        this.tilesCopy=current.getBoard();
+        findZeroTile();
     }
 
 
@@ -148,7 +167,6 @@ public final class TilePuzzle implements IGame{
     }
 
     public Collection<IGame> getNeighbors() {
-        if (neighbors != null) return neighbors;
         if (this.zeroRow == -1 && this.zeroCol == -1) findZeroTile();
         neighbors = new HashSet<>();
 
@@ -178,7 +196,7 @@ public final class TilePuzzle implements IGame{
         }
     }
     private void generateNeighbor(int toPosition, boolean isRow) {
-        TilePuzzle board = new TilePuzzle(this.tilesCopy);
+        TilePuzzle board = new TilePuzzle(this.tilesCopy, this.G, this);
         if (isRow)  swapEntries(board.tilesCopy, zeroRow, zeroCol, toPosition, zeroCol);
         else        swapEntries(board.tilesCopy, zeroRow, zeroCol, zeroRow, toPosition);
 
@@ -206,5 +224,25 @@ public final class TilePuzzle implements IGame{
 
     private void checkRep() {
         assert tilesCopy.length > 0;
+    }
+
+    public double F(){
+        return this.getHeuristic()+this.G;
+    }
+
+    public int getG(){
+        return G;
+    }
+
+    public void setG(int g) {
+        this.G=g;
+    }
+
+    public IGame getPrevious(){
+        return this.previous;
+    }
+
+    public int[][] getBoard(){
+        return this.tilesCopy;
     }
 }
