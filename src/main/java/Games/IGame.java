@@ -5,5 +5,9 @@ import java.util.Collection;
 public interface IGame {
 
     Collection<IGame> getNeighbors();
-    double getHeuristic();
+    double H();
+    boolean isGoal();
+    int G();
+    double F();
+    IGame getPrev();
 }
