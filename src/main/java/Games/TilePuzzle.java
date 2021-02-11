@@ -80,7 +80,6 @@ public final class TilePuzzle implements IGame{
         this.uNext=new PriorityQueue<>();
         this.expandByDeltaF=new HashMap<>();
         this.neighbors = new HashSet<>();
-        this.predictNeighborF();
     }
 
     private void predictNeighborF(){
@@ -334,6 +333,7 @@ public final class TilePuzzle implements IGame{
         else        swapEntries(board.tilesCopy, zeroRow, zeroCol, zeroRow, toPosition);
         board.findZeroTile();
         board.initialF();
+        board.predictNeighborF();
         neighbors.add(board);
         return board;
     }
