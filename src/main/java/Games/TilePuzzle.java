@@ -14,7 +14,12 @@ public final class TilePuzzle implements IGame{
     private int zeroCol = -1;
     private Collection<IGame> neighbors;
     private int G;
+    private double f;
+    PriorityQueue<Integer> uNext;
+    HashMap<Integer, HashSet<Integer>> expandByDeltaF;
+    private double staticF;
     private IGame previous;
+    private int developedNeighbores;
     /*
      * Rep Invariant
      *      tilesCopy.length > 0
@@ -38,8 +43,16 @@ public final class TilePuzzle implements IGame{
         this.zeroRow = N - 1;
         this.zeroCol = N - 1;
         this.shuffle();
+        this.findZeroTile();
         this.G=0;
+        this.f=this.getHeuristic()+this.G;
+        this.staticF=this.f;
         this.previous=null;
+        this.developedNeighbores=0;
+        this.uNext=new PriorityQueue<>();
+        this.expandByDeltaF=new HashMap<>();
+        this.neighbors = new HashSet<>();
+        this.predictNeighborF();
     }
 
     public TilePuzzle(int[][] tiles, int G, IGame previous) {
@@ -59,7 +72,127 @@ public final class TilePuzzle implements IGame{
         }
         checkRep();
         this.G=G+1;
+        this.f=this.getHeuristic()+this.G;
+        this.staticF=this.f;
         this.previous=previous;
+        this.findZeroTile();
+        this.developedNeighbores=0;
+        this.uNext=new PriorityQueue<>();
+        this.expandByDeltaF=new HashMap<>();
+        this.neighbors = new HashSet<>();
+        this.predictNeighborF();
+    }
+
+    private void predictNeighborF(){
+        if (zeroRow - 1 >= 0) {
+            int expectedRow = (tileAt(this.zeroRow-1, this.zeroCol) - 1) / this.N;
+            int expectedCol = (tileAt(this.zeroRow-1, this.zeroCol) - 1) % this.N;
+            int manhattan_before = Math.abs(expectedRow - (this.zeroRow-1)) + Math.abs(expectedCol - this.zeroCol);
+            int manhattan_after = Math.abs(expectedRow - this.zeroRow) + Math.abs(expectedCol - this.zeroCol);
+            int deltaF=0;
+            if((manhattan_before)-(manhattan_after)==0) {
+                deltaF = 1;
+            } else if((manhattan_before)-(manhattan_after)>0) {
+                deltaF = 0;
+            } else{
+                deltaF = 2;
+            }
+            if(!expandByDeltaF.containsKey(deltaF)) {
+                this.uNext.add(deltaF);
+                this.expandByDeltaF.put(deltaF, new HashSet<>());
+                this.expandByDeltaF.get(deltaF).add(1);
+            } else{
+                this.expandByDeltaF.get(deltaF).add(1);
+            }
+        }
+
+        if (zeroRow + 1 < this.size()) {
+            int expectedRow = (tileAt(zeroRow + 1, this.zeroCol) - 1) / this.N;
+            int expectedCol = (tileAt(zeroRow + 1, this.zeroCol) - 1) % this.N;
+            int manhattan_before = Math.abs(expectedRow - (this.zeroRow+1)) + Math.abs(expectedCol - this.zeroCol);
+            int manhattan_after = Math.abs(expectedRow - this.zeroRow) + Math.abs(expectedCol - this.zeroCol);
+            int deltaF=0;
+            if((manhattan_before)-(manhattan_after)==0) {
+                deltaF = 1;
+            } else if((manhattan_before)-(manhattan_after)>0) {
+                deltaF = 0;
+            } else{
+                deltaF = 2;
+            }
+            if(!expandByDeltaF.containsKey(deltaF)) {
+                this.uNext.add(deltaF);
+                this.expandByDeltaF.put(deltaF, new HashSet<>());
+                this.expandByDeltaF.get(deltaF).add(2);
+            } else{
+                this.expandByDeltaF.get(deltaF).add(2);
+            }
+        }
+
+        if (zeroCol - 1 >= 0) {
+            int expectedRow = (tileAt(this.zeroRow, this.zeroCol-1) - 1) / this.N;
+            int expectedCol = (tileAt(this.zeroRow, this.zeroCol-1) - 1) % this.N;
+            int manhattan_before = Math.abs(expectedRow - this.zeroRow) + Math.abs(expectedCol - (this.zeroCol-1));
+            int manhattan_after = Math.abs(expectedRow - this.zeroRow) + Math.abs(expectedCol - this.zeroCol);
+            int deltaF=0;
+            if((manhattan_before)-(manhattan_after)==0) {
+                deltaF = 1;
+            } else if((manhattan_before)-(manhattan_after)>0) {
+                deltaF = 0;
+            } else{
+                deltaF = 2;
+            }
+            if(!expandByDeltaF.containsKey(deltaF)) {
+                this.uNext.add(deltaF);
+                this.expandByDeltaF.put(deltaF, new HashSet<>());
+                this.expandByDeltaF.get(deltaF).add(3);
+            } else{
+                this.expandByDeltaF.get(deltaF).add(3);
+            }
+        }
+
+        if (zeroCol + 1 < this.size()) {
+            int expectedRow = (tileAt(this.zeroRow, this.zeroCol+1) - 1) / this.N;
+            int expectedCol = (tileAt(this.zeroRow, this.zeroCol+1) - 1) % this.N;
+            int manhattan_before = Math.abs(expectedRow - this.zeroRow) + Math.abs(expectedCol - (this.zeroCol+1));
+            int manhattan_after = Math.abs(expectedRow - this.zeroRow) + Math.abs(expectedCol - this.zeroCol);
+            int deltaF=0;
+            if((manhattan_before)-(manhattan_after)==0) {
+                deltaF = 1;
+            } else if((manhattan_before)-(manhattan_after)>0) {
+                deltaF = 0;
+            } else{
+                deltaF = 2;
+            }
+            if(!expandByDeltaF.containsKey(deltaF)) {
+                this.uNext.add(deltaF);
+                this.expandByDeltaF.put(deltaF, new HashSet<>());
+                this.expandByDeltaF.get(deltaF).add(4);
+            } else{
+                this.expandByDeltaF.get(deltaF).add(4);
+            }
+        }
+    }
+
+    public Collection<IGame> OSF(){
+        if (this.uNext.isEmpty())
+            return null;
+        int deltaF=this.uNext.poll();
+        HashSet<IGame> neighbors1 = new HashSet<>();
+        HashSet<Integer> neighboresNum=this.expandByDeltaF.get(deltaF);
+        if(neighboresNum.contains(1)){
+            neighbors1.add(generateNeighbor(zeroRow - 1, true));
+        }
+        if(neighboresNum.contains(2)){
+            neighbors1.add(generateNeighbor(zeroRow + 1, true));
+        }
+        if(neighboresNum.contains(3)){
+            neighbors1.add(generateNeighbor(zeroCol - 1, false));
+        }
+        if(neighboresNum.contains(4)){
+            neighbors1.add(generateNeighbor(zeroCol + 1, false));
+        }
+        this.f = this.staticF+deltaF;
+        return neighbors1;
     }
 
 
@@ -89,7 +222,7 @@ public final class TilePuzzle implements IGame{
     private void shuffle(){
         IGame current = this;
         Random random = new Random();
-        for(int i=0; i<100; i++){
+        for(int i=0; i<50; i++){
             HashSet<IGame> neighbores =(HashSet<IGame>) current.getNeighbors();
             List<IGame> neighboresList= new ArrayList<>(neighbores);
             int n = neighbores.size();
@@ -195,19 +328,25 @@ public final class TilePuzzle implements IGame{
             }
         }
     }
-    private void generateNeighbor(int toPosition, boolean isRow) {
+    private TilePuzzle generateNeighbor(int toPosition, boolean isRow) {
         TilePuzzle board = new TilePuzzle(this.tilesCopy, this.G, this);
         if (isRow)  swapEntries(board.tilesCopy, zeroRow, zeroCol, toPosition, zeroCol);
         else        swapEntries(board.tilesCopy, zeroRow, zeroCol, zeroRow, toPosition);
-
+        board.findZeroTile();
+        board.initialF();
         neighbors.add(board);
+        return board;
     }
 
 
     private void swapEntries(int[][] array, int fromRow, int fromCol, int toRow, int toCol) {
-        int i = array[fromRow][fromCol];
-        array[fromRow][fromCol] = array[toRow][toCol];
-        array[toRow][toCol] = i;
+        try {
+            int i = array[fromRow][fromCol];
+            array[fromRow][fromCol] = array[toRow][toCol];
+            array[toRow][toCol] = i;
+        }catch (Exception e){
+            System.out.println("dfsd");
+        }
     }
 
     public String toString() {
@@ -227,7 +366,11 @@ public final class TilePuzzle implements IGame{
     }
 
     public double F(){
-        return this.getHeuristic()+this.G;
+        return this.f;
+    }
+
+    public void setF(double f){
+        this.f=f;
     }
 
     public int getG(){
@@ -236,6 +379,13 @@ public final class TilePuzzle implements IGame{
 
     public void setG(int g) {
         this.G=g;
+        this.f=this.getHeuristic()+this.G;
+        this.staticF=this.f;
+    }
+
+    public void initialF(){
+        this.f=this.getHeuristic()+this.G;
+        this.staticF=this.f;
     }
 
     public IGame getPrevious(){
@@ -244,5 +394,17 @@ public final class TilePuzzle implements IGame{
 
     public int[][] getBoard(){
         return this.tilesCopy;
+    }
+
+    public void setPrevious(IGame pre){
+        this.previous=pre;
+    }
+
+    public void addDevelopedNeighbore(){
+        this.developedNeighbores++;
+    }
+
+    public int getDevelopedNeighbores() {
+        return developedNeighbores;
     }
 }
