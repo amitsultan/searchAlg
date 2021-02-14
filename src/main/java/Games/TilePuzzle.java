@@ -221,7 +221,7 @@ public final class TilePuzzle implements IGame{
     private void shuffle(){
         IGame current = this;
         Random random = new Random();
-        for(int i=0; i<50; i++){
+        for(int i=0; i<20; i++){
             HashSet<IGame> neighbores =(HashSet<IGame>) current.getNeighbors();
             List<IGame> neighboresList= new ArrayList<>(neighbores);
             int n = neighbores.size();
